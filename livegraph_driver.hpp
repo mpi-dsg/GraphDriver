@@ -3,7 +3,7 @@
 
 #include "tbb/concurrent_hash_map.h"
 #include "livegraph/livegraph.hpp"
-#include "reader/reader.hpp"
+#include "reader/graph_reader.hpp"
 #include "stream/stream.hpp"
 
 using namespace lg;

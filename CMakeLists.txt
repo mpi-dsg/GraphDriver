@@ -27,6 +27,6 @@ set(lg_path "/home/hkatehar/livegraph/LiveGraph/build")
 link_directories(${lg_path})
 link_directories("reader")
 
-add_executable(hello main.cpp livegraph_driver.cpp reader/reader.cpp stream/stream.cpp configuration.cpp)
+add_executable(driver main.cpp livegraph_driver.cpp reader/graph_reader.cpp stream/stream.cpp configuration.cpp)
 
-target_link_libraries(hello livegraph tbb)
+target_link_libraries(driver livegraph tbb)

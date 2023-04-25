@@ -10,15 +10,13 @@ struct edge_t {
     uint64_t des;
 };
 
-class Reader {
+class GraphReader {
     vector<edge_t> edges;
     size_t pos {0};
     
 public:
-    Reader(const string& path);
-    ~Reader();
-
-    static std::unique_ptr<Reader> open(const string& path);
+    GraphReader(const string& path);
+    ~GraphReader();
 
     bool read_edge(uint64_t& src, uint64_t& dst);
     bool read_vertex(uint64_t& vtx);

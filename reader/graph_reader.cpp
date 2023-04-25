@@ -2,7 +2,7 @@
 #include <iostream>
 #include <regex>
 
-#include "reader.hpp"
+#include "graph_reader.hpp"
 
 using namespace std;
 
@@ -34,19 +34,19 @@ static string get_containing_folder(const string& path) {
     return ans;
 }
 
-Reader::Reader(const string& path) {
+GraphReader::GraphReader(const string& path) {
     parse_properties(path);
     // cout << vertex_file << " " << edge_file << endl;
     handle_vertex_file.open(vertex_file, ios::in);
     handle_edge_file.open(edge_file, ios::in);
 }
 
-Reader::~Reader() {
+GraphReader::~GraphReader() {
     handle_vertex_file.close();
     handle_edge_file.close();
 }
 
-void Reader::parse_properties(const string& path) {
+void GraphReader::parse_properties(const string& path) {
     // cout << "path: " << get_containing_folder(path) << endl;
     fstream handle { path.c_str() };
     regex vertex_file_regex {"^\\s*graph.graph500-22.vertex-file\\s*=\\s*([^#\n]+?)\\s*"};
@@ -78,7 +78,7 @@ void Reader::parse_properties(const string& path) {
     }
 }
 
-bool Reader::read_edge(uint64_t& src, uint64_t& dst) {
+bool GraphReader::read_edge(uint64_t& src, uint64_t& dst) {
     if(!handle_edge_file.good()) {
         // cout << "Not good" << endl;
         return false;
@@ -107,7 +107,7 @@ bool Reader::read_edge(uint64_t& src, uint64_t& dst) {
     return true;
 }
 
-bool Reader::read_vertex(uint64_t& vtx) {
+bool GraphReader::read_vertex(uint64_t& vtx) {
     if(!handle_vertex_file.good()) {
         // cout << "Not good" << endl;
         return false;

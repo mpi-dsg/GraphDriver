@@ -1,8 +1,8 @@
 #include "stream.hpp"
-#include "../reader/reader.hpp"
+#include "../reader/graph_reader.hpp"
 
 EdgeStream::EdgeStream(const string& path) {
-    auto reader = new Reader(path);
+    auto reader = new GraphReader(path);
     auto n_edges = reader->get_n_edges();
     
     uint64_t src = -1, des = -1;
