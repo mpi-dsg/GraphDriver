@@ -23,10 +23,13 @@ include_directories(${TBB_INCLUDE_DIRS})
 link_directories(${TBB_LIBRARY_DIRS})
 link_libraries(${TBB_LIBRARIES})
 
+add_subdirectory("third_party_lib/cxxopts")
+
 set(lg_path "/home/hkatehar/livegraph/LiveGraph/build")
 link_directories(${lg_path})
 link_directories("reader")
 
 add_executable(driver main.cpp livegraph_driver.cpp reader/graph_reader.cpp stream/stream.cpp configuration.cpp)
 
-target_link_libraries(driver livegraph tbb)
+target_include_directories(driver PUBLIC cxxopts)
+target_link_libraries(driver livegraph tbb cxxopts)

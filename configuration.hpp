@@ -11,7 +11,7 @@ public:
     Configuration();
     ~Configuration();
 
-    void set_n_threads(int argc, char* argv[]);
+    void set_n_threads(int threads);
     int get_n_threads();
 
 private:

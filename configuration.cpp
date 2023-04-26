@@ -13,8 +13,8 @@ Configuration::Configuration() {}
 
 Configuration::~Configuration() {}
 
-void Configuration::set_n_threads(int argc, char* argv[]) {
-    if(argc >=2) n_threads = stoi(argv[1]);
+void Configuration::set_n_threads(int threads) {
+    n_threads = threads;
 }
 
 int Configuration::get_n_threads() {
