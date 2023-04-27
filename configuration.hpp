@@ -6,6 +6,9 @@ using namespace std;
 extern mutex _log_mutex;
 #define LOG( msg ) { scoped_lock lock(_log_mutex); cout << msg << /* flush immediately */ endl; }
 
+
+// #define ERROR ( msg ) { scoped_lock lock(_log_mutex); cout << <<"ERROR:" << msg << /* flush immediately */ endl; }
+
 class Configuration {
 public:
     Configuration();

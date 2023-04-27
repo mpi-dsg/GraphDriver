@@ -2,10 +2,9 @@
 #include <chrono>
 #include <cxxopts.hpp>
 
-// #include "third_party_lib/cxxopts/include"
-
 #include "configuration.hpp"
 #include "livegraph_driver.hpp"
+#include "reader/log_reader.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -15,6 +14,7 @@ int main(int argc, char* argv[]){
     options.add_options()
         ("w,writer_threads", "Number of writer threads", cxxopts::value<int>()->default_value("1"))
         ("g,graph_path", "Path to graph properties", cxxopts::value<std::string>())
+        ("l,log_path", "Path to graph update log", cxxopts::value<std::string>())
         ("h,help", "Print usage")
     ;
     auto result = options.parse(argc, argv);
@@ -29,19 +29,28 @@ int main(int argc, char* argv[]){
 
     configuration().set_n_threads(result["writer_threads"].as<int>());
 
-    auto driver = new LiveGraphDriver();
-    auto path = result["graph_path"].as<string>();
-    auto start = high_resolution_clock::now();
-    auto stream = new EdgeStream(path);
-    auto end = high_resolution_clock::now();
+    // auto path = result["graph_path"].as<string>();
+    // auto start = high_resolution_clock::now();
+    // auto stream = new EdgeStream(path);
+    // auto end = high_resolution_clock::now();
 
-    auto duration = duration_cast<milliseconds>(end - start);
-    LOG("Stream loading time (in ms): " << duration.count());
+    // auto duration = duration_cast<milliseconds>(end - start);
+    // LOG("Stream loading time (in ms): " << duration.count());
 
-    start = high_resolution_clock::now();
-    driver->load_graph(stream, configuration().get_n_threads());
-    end = high_resolution_clock::now();
-    duration = duration_cast<milliseconds>(end - start);
-    LOG("Graph loading time (in ms): " << duration.count());
+    // auto driver = new LiveGraphDriver();
+    // start = high_resolution_clock::now();
+    // driver->load_graph(stream, configuration().get_n_threads());
+    // end = high_resolution_clock::now();
+    // duration = duration_cast<milliseconds>(end - start);
+    // LOG("Graph loading time (in ms): " << duration.count());
+
+    auto log_reader = new LogReader(result["log_path"].as<string>());
+    uint64_t src, des, cnt = 0;
+    double wt;
+    while(log_reader->read_edge(src, des, wt)) {
+        cnt++;
+    }
+
+    LOG(cnt);
     
 }
