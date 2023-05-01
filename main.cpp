@@ -5,6 +5,7 @@
 #include "configuration.hpp"
 #include "livegraph_driver.hpp"
 #include "reader/log_reader.hpp"
+#include "stream/update_stream.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -44,13 +45,29 @@ int main(int argc, char* argv[]){
     // duration = duration_cast<milliseconds>(end - start);
     // LOG("Graph loading time (in ms): " << duration.count());
 
-    auto log_reader = new LogReader(result["log_path"].as<string>());
-    uint64_t src, des, cnt = 0;
-    double wt;
-    while(log_reader->read_edge(src, des, wt)) {
-        cnt++;
-    }
+    // auto log_reader = new LogReader(result["log_path"].as<string>());
+    // uint64_t src, dst, cnt = 0, rem_cnt = 0, add_cnt = 0;
+    // vector<uint64_t> sources, destinations;
+    // vector<bool> is_addition;
+    // double wt;
+    // while(log_reader->read_edge(src, dst, wt)) {
+    //     if(wt != 0) rem_cnt++;
+    //     else add_cnt++;
+    //     cnt++;
+    //     sources.push_back(src);
+    //     destinations.push_back(dst);
+    //     is_addition.push_back(wt==0);
+    // }
+    // LOG(add_cnt);
+    // LOG(rem_cnt);
+    // LOG(cnt);
 
-    LOG(cnt);
-    
+    uint64_t add = 0, rem = 0;
+    auto update_stream = new UpdateStream(result["log_path"].as<string>());
+    auto updates = update_stream->get_updates();
+    for(auto x: updates) x->insert ? add++ : rem++;
+
+    LOG(add);
+    LOG(rem);
+    LOG(updates.size());
 }
