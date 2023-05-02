@@ -163,7 +163,7 @@ EdgeBlockReader EdgeBlockLoader::load(){
 */
 LogReader::LogReader(const string& path): m_loader(m_handle, stoull(parse_properties(path)["internal.edges.block_size"])) {
     auto properties = parse_properties(path);
-    print_properties(properties);
+    // print_properties(properties);
     m_handle.open(path, ios_base::in | ios_base::binary);
     set_marker(properties, m_handle, Section::EDGES);
     m_reader = m_loader.load();
