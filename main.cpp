@@ -15,7 +15,8 @@ int main(int argc, char* argv[]){
         ("w,writer_threads", "Number of writer threads", cxxopts::value<int>()->default_value("1"))
         ("g,graph_path", "Path to graph properties", cxxopts::value<string>())
         ("v,validate", "Validate graph load and update", cxxopts::value<bool>()->default_value("false"))
-        ("l,log_path", "Path to graph update log", cxxopts::value<string>())
+        ("l,log_path", "Path to graph update log", cxxopts::value<string>()->default_value(""))
+        ("b,batch_size", "Batch size for updates", cxxopts::value<uint64_t>()->default_value("1024"))
         ("h,help", "Print usage")
     ;
     auto result = options.parse(argc, argv);
@@ -41,17 +42,21 @@ int main(int argc, char* argv[]){
     bool validate = result["validate"].as<bool>();
     driver->load_graph(stream, configuration().get_n_threads(), validate);
     
+    // string log_path = result.count("log_path") > 0 ? result["log_path"].as<string>() : "";
+    string log_path = result["log_path"].as<string>();
+    if(log_path.length() > 0){
+        start = high_resolution_clock::now();
+        auto update_stream = new UpdateStream(log_path);
+        end = high_resolution_clock::now();
+        duration = duration_cast<milliseconds>(end - start);
+        LOG("Update Stream loading time (in ms): " << duration.count());
 
-    // auto log_path = result["log_path"].as<string>();
-    // start = high_resolution_clock::now();
-    // auto update_stream = new UpdateStream(log_path);
-    // end = high_resolution_clock::now();
-    // duration = duration_cast<milliseconds>(end - start);
-    // LOG("Update Stream loading time (in ms): " << duration.count());
-
-    // start = high_resolution_clock::now();
-    // driver->update_graph_batch(update_stream, configuration().get_n_threads());
-    // end = high_resolution_clock::now();
-    // duration = duration_cast<milliseconds>(end - start);
-    // LOG("Update application time (in ms): " << duration.count());
+        start = high_resolution_clock::now();
+        uint64_t batch_size = result["batch_size"].as<uint64_t>();
+        driver->update_graph_batch(update_stream, batch_size, configuration().get_n_threads());
+        end = high_resolution_clock::now();
+        duration = duration_cast<milliseconds>(end - start);
+        LOG("Update application time (in ms): " << duration.count());
+    }
+    
 }

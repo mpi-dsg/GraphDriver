@@ -124,22 +124,52 @@ bool LiveGraphDriver::remove_edge(uint64_t ext_id1, uint16_t label, uint64_t ext
     return true;
 }
 
-void LiveGraphDriver::update_graph_batch(UpdateStream* update_stream, int n_threads = 1) {
+void LiveGraphDriver::update_graph_batch(UpdateStream* update_stream, uint64_t batch_size, int n_threads = 1) {
     auto updates = update_stream->get_updates();
-    auto tx = graph->begin_batch_loader();
 
     LOG("Batch update with threads: " << n_threads);
-    # pragma omp parallel for num_threads(n_threads)
-    for(uint64_t i = 0; i < updates.size(); i++) {
-        auto update = updates[i];
-        if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
-        else remove_edge_batch(update->src, 0, update->dst, tx);
-        tmp_cnt++;
+    LOG("Batch update with batch_size: " << batch_size);
+
+    // uint64_t batch_size = 1ull<<20;
+    uint64_t num_batches = updates.size()/batch_size + (updates.size() % batch_size != 0);
+    uint64_t applied_updates = 0;
+
+    for(uint64_t b_no = 0; b_no < num_batches; b_no++){
+        LOG("Batch: " << b_no);
+        uint64_t start = applied_updates;
+        uint64_t end = min(applied_updates + batch_size, updates.size());
+
+        auto tx = graph->begin_batch_loader();
+        # pragma omp parallel for num_threads(n_threads)
+        for(uint64_t i = start; i < end; i++) {
+            auto update = updates[i];
+            if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
+            else remove_edge_batch(update->src, 0, update->dst, tx);
+            tmp_cnt++;
+        }
+        tx.commit();
+        // graph->compact();
+
+        applied_updates += batch_size;
     }
 
-    tx.commit();
-
     cout << "Updates Applied: " << tmp_cnt << endl;
+
+    // auto updates = update_stream->get_updates();
+    // auto tx = graph->begin_batch_loader();
+
+    // LOG("Batch update with threads: " << n_threads);
+    // # pragma omp parallel for num_threads(n_threads)
+    // for(uint64_t i = 0; i < updates.size(); i++) {
+    //     auto update = updates[i];
+    //     if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
+    //     else remove_edge_batch(update->src, 0, update->dst, tx);
+    //     tmp_cnt++;
+    // }
+
+    // tx.commit();
+
+    // cout << "Updates Applied: " << tmp_cnt << endl;
 }
 
 bool LiveGraphDriver::add_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx) {

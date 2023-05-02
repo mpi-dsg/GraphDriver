@@ -21,7 +21,7 @@ public:
     Graph* get_graph();
     void load_graph(EdgeStream* stream, int n_threads = 1, bool validate = false);
     void update_graph(UpdateStream* update_stream, int n_threads);
-    void update_graph_batch(UpdateStream* update_stream, int n_threads);
+    void update_graph_batch(UpdateStream* update_stream, uint64_t batch_size, int n_threads);
 
 private:
     Graph* graph;
