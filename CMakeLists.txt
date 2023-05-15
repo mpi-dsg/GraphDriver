@@ -33,7 +33,7 @@ add_subdirectory("third_party_lib/cxxopts")
 set(lg_path "/home/hkatehar/livegraph/LiveGraph/build")
 link_directories(${lg_path})
 
-add_executable(driver main.cpp livegraph_driver.cpp reader/graph_reader.cpp reader/log_reader.cpp stream/stream.cpp stream/update_stream.cpp configuration.cpp)
+add_executable(driver main.cpp livegraph_driver.cpp reader/graph_reader.cpp reader/log_reader.cpp stream/stream.cpp stream/update_stream.cpp experiments/algorithms_experiment.cpp experiments/updates_experiment.cpp experiments/mixed_experiment.cpp configuration.cpp)
 
 target_include_directories(driver PUBLIC cxxopts)
 target_link_libraries(driver livegraph tbb cxxopts z)

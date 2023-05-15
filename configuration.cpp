@@ -20,3 +20,19 @@ void Configuration::set_n_threads(int threads) {
 int Configuration::get_n_threads() {
     return n_threads;
 }
+
+void Configuration::set_batch_size(uint64_t batch_size) {
+    this->batch_size = batch_size;
+}
+
+uint64_t Configuration::get_batch_size() {
+    return batch_size;
+}
+
+void Configuration::set_repetitions(int repetitions) {
+    this->repetitions = repetitions;
+}
+
+int Configuration::get_repetitions() {
+    return repetitions;
+}

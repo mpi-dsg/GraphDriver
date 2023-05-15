@@ -1,3 +1,6 @@
+#ifndef LIVEGRAPH_DRIVER
+#define LIVEGRAPH_DRIVER
+
 #include <map>
 #include <atomic>
 
@@ -23,13 +26,19 @@ public:
     void update_graph(UpdateStream* update_stream, int n_threads);
     void update_graph_batch(UpdateStream* update_stream, uint64_t batch_size, int n_threads);
 
+    unique_ptr<int64_t[]> execute_bfs(uint64_t ext_root = 1, int alpha = 15, int beta = 18);
+    void print_bfs_output(int64_t* dist, uint64_t max_vertex_id, Transaction& tx);
 private:
     Graph* graph;
-    map<uint64_t, uint64_t> int2ext;
-    VertexDictionary ext2int;
+    VertexDictionary ext2int_map;
     atomic<uint64_t> tmp_cnt {0} ;
+    atomic<uint64_t> n_vertices {0};
+    atomic<uint64_t> n_edges {0};
+
     bool vertex_exists(uint64_t& external_id, Transaction& tx);
-    uint64_t check_and_insert(uint64_t& external_id, Transaction& tx);
+    uint64_t ext2int(uint64_t& external_id, Transaction& tx);
+    uint64_t ext2int_with_insert(uint64_t& external_id, Transaction& tx);
+    uint64_t int2ext(uint64_t& internal_id, Transaction& tx);
 
     bool add_edge(uint64_t ext_id1, uint16_t label, uint64_t ext_id2);
     bool remove_edge(uint64_t ext_id1, uint16_t label, uint64_t ext_id2);
@@ -39,3 +48,4 @@ private:
 
     void validate_load_graph(EdgeStream* stream, int n_threads = 1);
 };
+#endif

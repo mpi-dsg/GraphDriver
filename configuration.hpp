@@ -1,3 +1,6 @@
+#ifndef CONFIGURATION
+#define CONFIGURATION
+
 #include <iostream>
 #include <mutex>
 
@@ -17,8 +20,18 @@ public:
     void set_n_threads(int threads);
     int get_n_threads();
 
+    void set_batch_size(uint64_t batch_size);
+    uint64_t get_batch_size();
+
+    void set_repetitions(int repetitions);
+    int get_repetitions();
+
 private:
     int n_threads;
+    uint64_t batch_size;
+    int repetitions;
 };
 
 Configuration& configuration();
+
+#endif

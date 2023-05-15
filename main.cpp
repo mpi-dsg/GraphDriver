@@ -3,11 +3,16 @@
 #include <cxxopts.hpp>
 
 #include "configuration.hpp"
-#include "livegraph_driver.hpp"
+// #include "livegraph_driver.hpp"
 #include "reader/log_reader.hpp"
+#include "experiments/algorithms_experiment.hpp"
+#include "experiments/updates_experiment.hpp"
+#include "experiments/mixed_experiment.hpp"
 
 using namespace std;
 using namespace std::chrono;
+
+
 
 int main(int argc, char* argv[]){
     cxxopts::Options options("config");
@@ -17,6 +22,7 @@ int main(int argc, char* argv[]){
         ("v,validate", "Validate graph load and update", cxxopts::value<bool>()->default_value("false"))
         ("l,log_path", "Path to graph update log", cxxopts::value<string>()->default_value(""))
         ("b,batch_size", "Batch size for updates", cxxopts::value<uint64_t>()->default_value("1024"))
+        ("r,repetitions", "Number of repetitions for algorithms", cxxopts::value<int>()->default_value("0"))
         ("h,help", "Print usage")
     ;
     auto result = options.parse(argc, argv);
@@ -30,6 +36,8 @@ int main(int argc, char* argv[]){
     }
 
     configuration().set_n_threads(result["writer_threads"].as<int>());
+    configuration().set_batch_size(result["batch_size"].as<uint64_t>());
+    configuration().set_repetitions(result["repetitions"].as<int>());
 
     auto graph_path = result["graph_path"].as<string>();
     auto start = high_resolution_clock::now();
@@ -41,7 +49,8 @@ int main(int argc, char* argv[]){
     auto driver = new LiveGraphDriver();
     bool validate = result["validate"].as<bool>();
     driver->load_graph(stream, configuration().get_n_threads(), validate);
-    
+    // auto output = driver->execute_bfs(0);
+
     // string log_path = result.count("log_path") > 0 ? result["log_path"].as<string>() : "";
     string log_path = result["log_path"].as<string>();
     if(log_path.length() > 0){
@@ -51,12 +60,17 @@ int main(int argc, char* argv[]){
         duration = duration_cast<milliseconds>(end - start);
         LOG("Update Stream loading time (in ms): " << duration.count());
 
-        start = high_resolution_clock::now();
-        uint64_t batch_size = result["batch_size"].as<uint64_t>();
-        driver->update_graph_batch(update_stream, batch_size, configuration().get_n_threads());
-        end = high_resolution_clock::now();
-        duration = duration_cast<milliseconds>(end - start);
-        LOG("Update application time (in ms): " << duration.count());
+        if(configuration().get_repetitions() > 0) { 
+            MixedExperiment experiment {driver, update_stream};
+            experiment.execute();
+        }
+        else {
+            UpdatesExperiment experiment {driver, update_stream};
+            experiment.execute();
+        }
     }
-    
+    else{
+        AlgorithmsExperiment experiment {driver};
+        experiment.execute();
+    }
 }
