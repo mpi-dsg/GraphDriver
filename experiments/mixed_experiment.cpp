@@ -12,7 +12,6 @@ void MixedExperiment::execute() {
         #pragma omp section
         {
             experiment_u.execute();
-            
         }
 
         #pragma omp section

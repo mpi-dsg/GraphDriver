@@ -36,16 +36,16 @@ void SequentialExperiment::execute() {
     {
         #pragma omp section
         {
+            driver->start_updates(update_stream, 1);
+        }
+
+        #pragma omp section
+        {
             while(!driver->stop_sequential()) {
                 experiment_a.execute();
                 driver->apply_updates();
             }
             
-        }
-
-        #pragma omp section
-        {
-            driver->start_updates(update_stream, 1);
         }
     }
 }

@@ -17,5 +17,6 @@ UpdateStream::UpdateStream(const string& path) {
 }
 
 vector<EdgeUpdate*> UpdateStream::get_updates() {
+    // return vector<EdgeUpdate*>(updates.begin(), updates.begin() + 100000);
     return updates;
 }

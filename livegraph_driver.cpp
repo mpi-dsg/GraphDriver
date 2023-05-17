@@ -17,6 +17,11 @@ LiveGraphDriver::LiveGraphDriver() {
     inactive_buffer = new tbb::concurrent_queue<EdgeUpdate*>();
 }
 
+LiveGraphDriver::~LiveGraphDriver() {
+    delete active_buffer;
+    delete inactive_buffer;
+}
+
 Graph* LiveGraphDriver::get_graph() {
     return graph;
 }
@@ -261,8 +266,8 @@ void LiveGraphDriver::add_to_buffer(EdgeUpdate* update) {
 
 void LiveGraphDriver::start_updates(UpdateStream* update_stream, int n_threads) {
     auto updates = update_stream->get_updates();
-    auto rate = 100000;
-    LOG("Starting updates");
+    auto rate = configuration().get_rate();
+    LOG("Starting updates with rate: " << rate);
 
     uint64_t done = 0, start, end;
     while(done < updates.size()) {

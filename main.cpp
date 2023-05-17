@@ -13,7 +13,15 @@
 using namespace std;
 using namespace std::chrono;
 
-
+void print_statistics(Statistics stats) {
+    LOG("Minimum: " << stats.min);
+    LOG("Maximum: " << stats.max);
+    LOG("Sum: " << stats.sum);
+    LOG("Average: " << stats.average);
+    LOG("90th Percentile: " << stats.percentile90);
+    LOG("99th Percentile: " << stats.percentile99);
+    LOG("Count: " << stats.count);
+}
 
 int main(int argc, char* argv[]){
     cxxopts::Options options("config");
@@ -77,6 +85,7 @@ int main(int argc, char* argv[]){
     duration = duration_cast<milliseconds>(end - start);
     LOG("Update Stream loading time (in ms): " << duration.count());
 
+    vector<int64_t> times;
     switch(type) {
         case 2:
         {
@@ -88,16 +97,21 @@ int main(int argc, char* argv[]){
         {
             MixedExperiment experiment_m {driver, update_stream};
             experiment_m.execute();
+            times = experiment_m.get_times();
             break;
         }
         case 4:
         {
             SequentialExperiment experiment_s {driver, update_stream};
             experiment_s.execute();
+            times = experiment_s.get_times();
             break;
         }
         default:
             LOG("Invalid Type: " << type);
             break;
     }
+
+    Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
+    print_statistics(stats);
 }
