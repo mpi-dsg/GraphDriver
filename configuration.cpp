@@ -36,3 +36,11 @@ void Configuration::set_repetitions(int repetitions) {
 int Configuration::get_repetitions() {
     return repetitions;
 }
+
+void Configuration::set_rate(uint64_t rate) {
+    this->rate = rate;
+}
+
+uint64_t Configuration::get_rate() {
+    return rate;
+}

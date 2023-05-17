@@ -1,5 +1,6 @@
 #include <iostream>
 #include <omp.h>
+#include <thread>
 #include <chrono>
 
 #include "livegraph_driver.hpp"
@@ -12,6 +13,8 @@ using namespace std::chrono;
 
 LiveGraphDriver::LiveGraphDriver() {
     graph = new Graph();
+    active_buffer = new tbb::concurrent_queue<EdgeUpdate*>();
+    inactive_buffer = new tbb::concurrent_queue<EdgeUpdate*>();
 }
 
 Graph* LiveGraphDriver::get_graph() {
@@ -248,6 +251,64 @@ void LiveGraphDriver::validate_load_graph(EdgeStream* stream, int n_threads) {
     LOG("Validation finished");
 }
 
+/*
+    Sequential Experiment Methods
+*/
+void LiveGraphDriver::add_to_buffer(EdgeUpdate* update) {
+    // while(!can_add) {}
+    active_buffer->push(update);
+}
+
+void LiveGraphDriver::start_updates(UpdateStream* update_stream, int n_threads) {
+    auto updates = update_stream->get_updates();
+    auto rate = 100000;
+    LOG("Starting updates");
+
+    uint64_t done = 0, start, end;
+    while(done < updates.size()) {
+        start = done;
+        end = done + rate;
+        auto t_start = high_resolution_clock::now();
+        for(uint64_t i = start; i < end; i++) {
+            auto update = updates[i];
+            add_to_buffer(update);
+        }
+        done = end;
+        auto t_end = high_resolution_clock::now();
+        auto duration = duration_cast<milliseconds>(t_end - t_start);
+        auto sleep_duration = 1000-duration.count();
+        LOG("Sleep: " << sleep_duration);
+        this_thread::sleep_for(chrono::milliseconds(sleep_duration));
+    }
+    for(uint64_t i = 0; i < updates.size(); i++) {
+        
+    }
+    all_updates_added_to_buffer = true;
+    cout << "Updates added to buffer: " << tmp_cnt << endl;
+}
+
+void LiveGraphDriver::apply_updates() {
+    LOG("Applying");
+    swap(active_buffer, inactive_buffer);
+    uint64_t count = 0;
+    auto tx = graph->begin_batch_loader();
+    while(!inactive_buffer->empty()) {
+        EdgeUpdate* update;
+        if(inactive_buffer->try_pop(update)) {
+            // apply update
+            if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
+            else remove_edge_batch(update->src, 0, update->dst, tx);
+
+            count++;
+        }
+    }
+    tx.commit();
+    LOG("Applied: " << count);
+}
+
+bool LiveGraphDriver::stop_sequential() {
+    return all_updates_added_to_buffer && active_buffer->empty() && inactive_buffer->empty();
+}
 
 /*
     BFS

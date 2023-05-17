@@ -1,3 +1,6 @@
+#ifndef UPDATES_EXPERIMENT
+#define UPDATES_EXPERIMENT
+
 #include "../livegraph_driver.hpp"
 #include "../configuration.hpp"
 
@@ -15,3 +18,5 @@ private:
     LiveGraphDriver* driver;
     UpdateStream* update_stream;
 };
+
+#endif

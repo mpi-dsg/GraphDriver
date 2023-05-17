@@ -8,6 +8,7 @@
 #include "experiments/algorithms_experiment.hpp"
 #include "experiments/updates_experiment.hpp"
 #include "experiments/mixed_experiment.hpp"
+#include "experiments/sequential_experiment.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -22,7 +23,9 @@ int main(int argc, char* argv[]){
         ("v,validate", "Validate graph load and update", cxxopts::value<bool>()->default_value("false"))
         ("l,log_path", "Path to graph update log", cxxopts::value<string>()->default_value(""))
         ("b,batch_size", "Batch size for updates", cxxopts::value<uint64_t>()->default_value("1024"))
-        ("r,repetitions", "Number of repetitions for algorithms", cxxopts::value<int>()->default_value("0"))
+        ("R,repetitions", "Number of repetitions for algorithms", cxxopts::value<int>()->default_value("0"))
+        ("r,rate", "Rate of updates to be applied for sequential", cxxopts::value<uint64_t>()->default_value("100000"))
+        ("t,type", "Type of experiment(0 - insert only, 1 - algorithms only, 2 - updates only, 3 - mixed, 4 - sequential)", cxxopts::value<int>()->default_value("0"))
         ("h,help", "Print usage")
     ;
     auto result = options.parse(argc, argv);
@@ -38,7 +41,12 @@ int main(int argc, char* argv[]){
     configuration().set_n_threads(result["writer_threads"].as<int>());
     configuration().set_batch_size(result["batch_size"].as<uint64_t>());
     configuration().set_repetitions(result["repetitions"].as<int>());
+    configuration().set_rate(result["rate"].as<uint64_t>());
+    int type = result["type"].as<int>();
 
+    /*
+        Loading EdgeStream
+    */
     auto graph_path = result["graph_path"].as<string>();
     auto start = high_resolution_clock::now();
     auto stream = new EdgeStream(graph_path);
@@ -46,31 +54,50 @@ int main(int argc, char* argv[]){
     auto duration = duration_cast<milliseconds>(end - start);
     LOG("Stream loading time (in ms): " << duration.count());
 
+    /*
+        Loading Graph
+    */
     auto driver = new LiveGraphDriver();
     bool validate = result["validate"].as<bool>();
     driver->load_graph(stream, configuration().get_n_threads(), validate);
-    // auto output = driver->execute_bfs(0);
-
-    // string log_path = result.count("log_path") > 0 ? result["log_path"].as<string>() : "";
-    string log_path = result["log_path"].as<string>();
-    if(log_path.length() > 0){
-        start = high_resolution_clock::now();
-        auto update_stream = new UpdateStream(log_path);
-        end = high_resolution_clock::now();
-        duration = duration_cast<milliseconds>(end - start);
-        LOG("Update Stream loading time (in ms): " << duration.count());
-
-        if(configuration().get_repetitions() > 0) { 
-            MixedExperiment experiment {driver, update_stream};
-            experiment.execute();
-        }
-        else {
-            UpdatesExperiment experiment {driver, update_stream};
-            experiment.execute();
-        }
+    if(type == 0) exit(0);
+    if(type == 1) {
+        AlgorithmsExperiment experiment_a {driver};
+        experiment_a.execute();
+        exit(0);
     }
-    else{
-        AlgorithmsExperiment experiment {driver};
-        experiment.execute();
+
+    /*
+        Loading UpdateStream
+    */
+    string log_path = result["log_path"].as<string>();
+    start = high_resolution_clock::now();
+    auto update_stream = new UpdateStream(log_path);
+    end = high_resolution_clock::now();
+    duration = duration_cast<milliseconds>(end - start);
+    LOG("Update Stream loading time (in ms): " << duration.count());
+
+    switch(type) {
+        case 2:
+        {
+            UpdatesExperiment experiment_u {driver, update_stream};
+            experiment_u.execute();
+            break;
+        }
+        case 3:
+        {
+            MixedExperiment experiment_m {driver, update_stream};
+            experiment_m.execute();
+            break;
+        }
+        case 4:
+        {
+            SequentialExperiment experiment_s {driver, update_stream};
+            experiment_s.execute();
+            break;
+        }
+        default:
+            LOG("Invalid Type: " << type);
+            break;
     }
 }

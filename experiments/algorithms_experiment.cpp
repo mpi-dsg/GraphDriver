@@ -5,7 +5,6 @@
 using namespace std::chrono;
 
 void AlgorithmsExperiment::execute() {
-    vector<int64_t> times;
     for(int i = 0; i < configuration().get_repetitions(); i++){
         auto start = high_resolution_clock::now();
         auto output = driver->execute_bfs(0);
@@ -16,5 +15,9 @@ void AlgorithmsExperiment::execute() {
         LOG(time);
     }
 
-    for(auto time: times) LOG(time);
+    // for(auto time: times) LOG(time);
+}
+
+vector<int64_t> AlgorithmsExperiment::get_times() {
+    return times;
 }

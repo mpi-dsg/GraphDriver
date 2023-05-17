@@ -1,3 +1,6 @@
+#ifndef ALGORITHMS_EXPERIMENT
+#define ALGORITHMS_EXPERIMENT
+
 #include "../livegraph_driver.hpp"
 #include "../configuration.hpp"
 
@@ -8,6 +11,10 @@ public:
     }
     ~AlgorithmsExperiment() {};
     void execute();
+    vector<int64_t> get_times();
 private:
     LiveGraphDriver* driver;
+    vector<int64_t> times;
 };
+
+#endif

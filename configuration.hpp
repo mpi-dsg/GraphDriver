@@ -26,10 +26,14 @@ public:
     void set_repetitions(int repetitions);
     int get_repetitions();
 
+    void set_rate(uint64_t rate);
+    uint64_t get_rate();
+
 private:
     int n_threads;
     uint64_t batch_size;
     int repetitions;
+    uint64_t rate;
 };
 
 Configuration& configuration();
