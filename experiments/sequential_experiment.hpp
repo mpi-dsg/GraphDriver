@@ -8,7 +8,7 @@
 class SequentialExperiment {
 
 public:
-    SequentialExperiment(LiveGraphDriver* driver, UpdateStream* update_stream) 
+    SequentialExperiment(LiveGraphDriver& driver, UpdateStream& update_stream) 
     : driver(driver), update_stream(update_stream), experiment_a(driver) {
         LOG("Starting Sequential Experiment");
     }
@@ -19,8 +19,8 @@ public:
     vector<int64_t> get_times();
 
 private:
-    LiveGraphDriver* driver;
-    UpdateStream* update_stream;
+    LiveGraphDriver& driver;
+    UpdateStream& update_stream;
     AlgorithmsExperiment experiment_a;
 };
 

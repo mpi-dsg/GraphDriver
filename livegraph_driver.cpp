@@ -13,8 +13,8 @@ using namespace std::chrono;
 
 LiveGraphDriver::LiveGraphDriver() {
     graph = new Graph();
-    active_buffer = new tbb::concurrent_queue<EdgeUpdate*>();
-    inactive_buffer = new tbb::concurrent_queue<EdgeUpdate*>();
+    active_buffer = new tbb::concurrent_queue<EdgeUpdate>();
+    inactive_buffer = new tbb::concurrent_queue<EdgeUpdate>();
 }
 
 LiveGraphDriver::~LiveGraphDriver() {
@@ -61,9 +61,9 @@ bool LiveGraphDriver::vertex_exists(uint64_t& external_id, Transaction& tx) {
     return ext2int_map.find(a, external_id);
 }
 
-void LiveGraphDriver::load_graph(EdgeStream* stream, int n_threads, bool validate) {
-    auto sources = stream->get_sources();
-    auto destinations = stream->get_destinations();
+void LiveGraphDriver::load_graph(EdgeStream& stream, int n_threads, bool validate) {
+    auto sources = stream.get_sources();
+    auto destinations = stream.get_destinations();
 
     auto start = high_resolution_clock::now();
     auto tx = graph->begin_batch_loader();
@@ -82,19 +82,20 @@ void LiveGraphDriver::load_graph(EdgeStream* stream, int n_threads, bool validat
     auto duration = duration_cast<milliseconds>(end - start);
     LOG("Graph loading time (in ms): " << duration.count());
     LOG("Vertices Added: " << n_vertices);
+    LOG("Edges Added: " << n_edges << "\n");
 
     if(validate) validate_load_graph(stream, n_threads);
 }
 
-void LiveGraphDriver::update_graph(UpdateStream* update_stream, int n_threads = 1) {
-    auto updates = update_stream->get_updates();
+void LiveGraphDriver::update_graph(UpdateStream& update_stream, int n_threads = 1) {
+    auto updates = update_stream.get_updates();
 
     LOG("Number of writer Threads: " << n_threads);
     # pragma omp parallel for num_threads(n_threads)
     for(uint64_t i = 0; i < updates.size(); i++) {
         auto update = updates[i];
-        if(update->insert) add_edge(update->src, 0, update->dst);
-        else remove_edge(update->src, 0, update->dst);
+        if(update.insert) add_edge(update.src, 0, update.dst);
+        else remove_edge(update.src, 0, update.dst);
 
         tmp_cnt++;
     }
@@ -154,51 +155,38 @@ bool LiveGraphDriver::remove_edge(uint64_t ext_id1, uint16_t label, uint64_t ext
     return true;
 }
 
-void LiveGraphDriver::update_graph_batch(UpdateStream* update_stream, uint64_t batch_size, int n_threads = 1) {
-    auto updates = update_stream->get_updates();
+void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t batch_size, int n_threads, bool log) {
+    auto updates = update_stream.get_updates();
 
-    LOG("Batch update with threads: " << n_threads);
-    LOG("Batch update with batch_size: " << batch_size);
+    if(log) {
+        LOG("Batch update with threads: " << n_threads);
+        LOG("Batch update with batch_size: " << batch_size);
+    }
 
-    // uint64_t batch_size = 1ull<<20;
     uint64_t num_batches = updates.size()/batch_size + (updates.size() % batch_size != 0);
-    uint64_t applied_updates = 0;
+    // uint64_t applied_updates = 0;
 
+    uint64_t done = 0;
     for(uint64_t b_no = 0; b_no < num_batches; b_no++){
-        LOG("Batch: " << b_no);
-        uint64_t start = applied_updates;
-        uint64_t end = min(applied_updates + batch_size, updates.size());
+        if(log) LOG("Batch: " << b_no);
+        uint64_t start = done;
+        uint64_t end = min(done + batch_size, updates.size());
 
         auto tx = graph->begin_batch_loader();
         # pragma omp parallel for num_threads(n_threads)
         for(uint64_t i = start; i < end; i++) {
             auto update = updates[i];
-            if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
-            else remove_edge_batch(update->src, 0, update->dst, tx);
+            updates_applied++;
+            if(update.insert) add_edge_batch(update.src, 0, update.dst, tx);
+            else remove_edge_batch(update.src, 0, update.dst, tx);
         }
         tx.commit();
         // graph->compact();
 
-        applied_updates += batch_size;
+        done += batch_size;
     }
 
-    // cout << "Updates Applied: " << tmp_cnt << endl;
-
-    // auto updates = update_stream->get_updates();
-    // auto tx = graph->begin_batch_loader();
-
-    // LOG("Batch update with threads: " << n_threads);
-    // # pragma omp parallel for num_threads(n_threads)
-    // for(uint64_t i = 0; i < updates.size(); i++) {
-    //     auto update = updates[i];
-    //     if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
-    //     else remove_edge_batch(update->src, 0, update->dst, tx);
-    //     tmp_cnt++;
-    // }
-
-    // tx.commit();
-
-    // cout << "Updates Applied: " << tmp_cnt << endl;
+    LOG("Total Updates Applied: " << updates_applied);
 }
 
 bool LiveGraphDriver::add_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx) {
@@ -229,10 +217,10 @@ bool LiveGraphDriver::remove_edge_batch(uint64_t ext_id1, uint16_t label, uint64
     return true;
 }
 
-void LiveGraphDriver::validate_load_graph(EdgeStream* stream, int n_threads) {
+void LiveGraphDriver::validate_load_graph(EdgeStream& stream, int n_threads) {
     LOG("Validating Load Graph");
-    auto sources = stream->get_sources();
-    auto destinations = stream->get_destinations();
+    auto sources = stream.get_sources();
+    auto destinations = stream.get_destinations();
 
     auto tx = graph->begin_read_only_transaction();
 
@@ -259,13 +247,13 @@ void LiveGraphDriver::validate_load_graph(EdgeStream* stream, int n_threads) {
 /*
     Sequential Experiment Methods
 */
-void LiveGraphDriver::add_to_buffer(EdgeUpdate* update) {
+void LiveGraphDriver::add_to_buffer(EdgeUpdate& update) {
     // while(!can_add) {}
     active_buffer->push(update);
 }
 
-void LiveGraphDriver::start_updates(UpdateStream* update_stream, int n_threads) {
-    auto updates = update_stream->get_updates();
+void LiveGraphDriver::start_updates(UpdateStream& update_stream, int n_threads) {
+    auto updates = update_stream.get_updates();
     auto rate = configuration().get_rate();
     LOG("Starting updates with rate: " << rate);
 
@@ -295,20 +283,20 @@ void LiveGraphDriver::start_updates(UpdateStream* update_stream, int n_threads) 
 void LiveGraphDriver::apply_updates() {
     LOG("Applying");
     swap(active_buffer, inactive_buffer);
-    uint64_t count = 0;
-    auto tx = graph->begin_batch_loader();
-    while(!inactive_buffer->empty()) {
-        EdgeUpdate* update;
-        if(inactive_buffer->try_pop(update)) {
-            // apply update
-            if(update->insert) add_edge_batch(update->src, 0, update->dst, tx);
-            else remove_edge_batch(update->src, 0, update->dst, tx);
+    update_graph_batch_from_queue(inactive_buffer, configuration().get_batch_size(), configuration().get_n_threads());
+}
 
-            count++;
+void LiveGraphDriver::update_graph_batch_from_queue(tbb::concurrent_queue<EdgeUpdate>* inactive_buffer, uint64_t batch_size, int n_threads) {
+    UpdateStream update_stream;
+    
+    while(!inactive_buffer->empty()) {
+        EdgeUpdate update;
+        if(inactive_buffer->try_pop(update)) {
+            update_stream.add_update(update);
         }
     }
-    tx.commit();
-    LOG("Applied: " << count);
+
+    update_graph_batch(update_stream, batch_size, n_threads, false /* No logging on every step*/ );
 }
 
 bool LiveGraphDriver::stop_sequential() {

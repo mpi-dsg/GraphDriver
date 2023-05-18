@@ -6,7 +6,7 @@
 
 class UpdatesExperiment {
 public:
-    UpdatesExperiment(LiveGraphDriver* driver, UpdateStream* update_stream)
+    UpdatesExperiment(LiveGraphDriver& driver, UpdateStream& update_stream)
     : driver(driver), update_stream(update_stream) {
         LOG("Starting Updates Experiment");
     }
@@ -15,8 +15,8 @@ public:
     void execute();
 
 private:
-    LiveGraphDriver* driver;
-    UpdateStream* update_stream;
+    LiveGraphDriver& driver;
+    UpdateStream& update_stream;
 };
 
 #endif

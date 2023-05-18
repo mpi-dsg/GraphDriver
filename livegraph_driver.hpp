@@ -19,17 +19,20 @@ typedef VertexDictionary::accessor VertexDictionaryAccessor;
 
 class LiveGraphDriver{
 public:
+    atomic<uint64_t> updates_applied {0};
+
     LiveGraphDriver();
     ~LiveGraphDriver();
 
     Graph* get_graph();
-    void load_graph(EdgeStream* stream, int n_threads = 1, bool validate = false);
-    void update_graph(UpdateStream* update_stream, int n_threads);
-    void update_graph_batch(UpdateStream* update_stream, uint64_t batch_size, int n_threads);
+    void load_graph(EdgeStream& stream, int n_threads = 1, bool validate = false);
+    void update_graph(UpdateStream& update_stream, int n_threads);
+    void update_graph_batch(UpdateStream& update_stream, uint64_t batch_size, int n_threads = 1, bool log = true);
 
-    void start_updates(UpdateStream* update_stream, int n_threads = 1);
-    void add_to_buffer(EdgeUpdate* update);
+    void start_updates(UpdateStream& update_stream, int n_threads = 1);
+    void add_to_buffer(EdgeUpdate& update);
     void apply_updates();
+    void update_graph_batch_from_queue(tbb::concurrent_queue<EdgeUpdate>* inactive_buffer, uint64_t batch_size, int n_threads = 1);
     bool stop_sequential();
 
     unique_ptr<int64_t[]> execute_bfs(uint64_t ext_root = 1, int alpha = 15, int beta = 18);
@@ -41,8 +44,8 @@ private:
     atomic<uint64_t> n_vertices {0};
     atomic<uint64_t> n_edges {0};
     
-    tbb::concurrent_queue<EdgeUpdate*>* active_buffer;
-    tbb::concurrent_queue<EdgeUpdate*>* inactive_buffer;
+    tbb::concurrent_queue<EdgeUpdate>* active_buffer;
+    tbb::concurrent_queue<EdgeUpdate>* inactive_buffer;
     atomic<bool> all_updates_added_to_buffer = false;
 
     bool vertex_exists(uint64_t& external_id, Transaction& tx);
@@ -56,6 +59,6 @@ private:
     bool add_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx);
     bool remove_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx);
 
-    void validate_load_graph(EdgeStream* stream, int n_threads = 1);
+    void validate_load_graph(EdgeStream& stream, int n_threads = 1);
 };
 #endif

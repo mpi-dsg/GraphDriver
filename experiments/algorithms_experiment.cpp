@@ -7,12 +7,12 @@ using namespace std::chrono;
 void AlgorithmsExperiment::execute() {
     for(int i = 0; i < configuration().get_repetitions(); i++){
         auto start = high_resolution_clock::now();
-        auto output = driver->execute_bfs(0);
+        auto output = driver.execute_bfs(0);
         auto end = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(end - start);
         auto time = duration.count();
         times.push_back(time);
-        LOG(time);
+        LOG("BFS Execution Time: " << time);
     }
 
     // for(auto time: times) LOG(time);
@@ -46,6 +46,9 @@ Statistics AlgorithmsExperiment::calculate_statistics(const vector<int64_t>& num
     // Calculate percentiles
     vector<int64_t> sortedNumbers = numbers;
     sort(sortedNumbers.begin(), sortedNumbers.end());
+
+    auto size = numbers.size();
+    stats.median = size % 2 == 0 ? (sortedNumbers[size / 2 - 1] + sortedNumbers[size / 2]) / 2.0 : sortedNumbers[size / 2];
 
     int index90 = static_cast<int>(round(0.9 * (sortedNumbers.size() - 1)));
     stats.percentile90 = sortedNumbers[index90];

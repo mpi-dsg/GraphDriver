@@ -14,10 +14,12 @@ using namespace std;
 using namespace std::chrono;
 
 void print_statistics(Statistics stats) {
+    LOG("Statistics------------------------------------");
     LOG("Minimum: " << stats.min);
     LOG("Maximum: " << stats.max);
     LOG("Sum: " << stats.sum);
     LOG("Average: " << stats.average);
+    LOG("Median: " << stats.median);
     LOG("90th Percentile: " << stats.percentile90);
     LOG("99th Percentile: " << stats.percentile99);
     LOG("Count: " << stats.count);
@@ -57,21 +59,24 @@ int main(int argc, char* argv[]){
     */
     auto graph_path = result["graph_path"].as<string>();
     auto start = high_resolution_clock::now();
-    auto stream = new EdgeStream(graph_path);
+    EdgeStream stream {graph_path};
     auto end = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(end - start);
-    LOG("Stream loading time (in ms): " << duration.count());
+    LOG("Stream loading time (in ms): " << duration.count() << "\n");
 
     /*
         Loading Graph
     */
-    auto driver = new LiveGraphDriver();
+    LiveGraphDriver driver;
     bool validate = result["validate"].as<bool>();
-    driver->load_graph(stream, configuration().get_n_threads(), validate);
+    driver.load_graph(stream, configuration().get_n_threads(), validate);
     if(type == 0) exit(0);
     if(type == 1) {
         AlgorithmsExperiment experiment_a {driver};
         experiment_a.execute();
+        auto times = experiment_a.get_times();
+        Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
+        print_statistics(stats);
         exit(0);
     }
 
@@ -80,11 +85,12 @@ int main(int argc, char* argv[]){
     */
     string log_path = result["log_path"].as<string>();
     start = high_resolution_clock::now();
-    auto update_stream = new UpdateStream(log_path);
+    UpdateStream update_stream {log_path};
     end = high_resolution_clock::now();
     duration = duration_cast<milliseconds>(end - start);
     LOG("Update Stream loading time (in ms): " << duration.count());
 
+    start = high_resolution_clock::now();
     vector<int64_t> times;
     switch(type) {
         case 2:
@@ -111,6 +117,9 @@ int main(int argc, char* argv[]){
             LOG("Invalid Type: " << type);
             break;
     }
+    end = high_resolution_clock::now();
+    duration = duration_cast<milliseconds>(end - start);
+    LOG("Experiment Time: " << duration.count());
 
     Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
     print_statistics(stats);

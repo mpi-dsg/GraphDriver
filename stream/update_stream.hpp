@@ -6,6 +6,7 @@ using namespace std;
 
 class EdgeUpdate {
 public:
+    EdgeUpdate();
     EdgeUpdate(uint64_t src, uint64_t dst, bool insert);
     ~EdgeUpdate();
 
@@ -15,10 +16,12 @@ public:
 };
 
 class UpdateStream {
-    vector<EdgeUpdate*> updates;
+    vector<EdgeUpdate> updates;
 public:
+    UpdateStream();
     UpdateStream(const string& path);
     ~UpdateStream();
 
-     vector<EdgeUpdate*> get_updates();
+    void add_update(EdgeUpdate update);
+    vector<EdgeUpdate> get_updates();
 };

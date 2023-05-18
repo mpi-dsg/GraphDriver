@@ -12,6 +12,7 @@ struct Statistics {
     int64_t max;
     int64_t sum;
     double average;
+    double median;
     int64_t percentile90;
     int64_t percentile99;
     int64_t count;
@@ -20,7 +21,7 @@ struct Statistics {
 
 class AlgorithmsExperiment{
 public:
-    AlgorithmsExperiment(LiveGraphDriver* driver) : driver(driver) {
+    AlgorithmsExperiment(LiveGraphDriver& driver) : driver(driver) {
         LOG("Starting Algorithms Experiment");
     }
     ~AlgorithmsExperiment() {};
@@ -28,7 +29,7 @@ public:
     vector<int64_t> get_times();
     static Statistics calculate_statistics(const vector<int64_t>& numbers);
 private:
-    LiveGraphDriver* driver;
+    LiveGraphDriver& driver;
     vector<int64_t> times;
 };
 

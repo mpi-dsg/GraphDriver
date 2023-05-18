@@ -6,48 +6,30 @@
 using namespace std::chrono;
 
 void SequentialExperiment::execute() {
-    // omp_set_num_threads(configuration().get_n_threads() + 1);
-    // omp_set_nested(1);
-    // #pragma omp parallel
-    // {
-    //     int threadId = omp_get_thread_num();
-    //     if (threadId == 0) {
-    //         cpu_set_t cpuset;
-    //         CPU_ZERO(&cpuset);
-    //         CPU_SET(0, &cpuset);
-    //         sched_setaffinity(0, sizeof(cpuset), &cpuset);
-            
-    //         AlgorithmsExperiment experiment {driver};
-    //         while(!driver->stop_sequential()) {
-    //             experiment.execute();
-    //             // driver->apply_updates();
-    //         }
-    //     }
-    //     #pragma omp single
-    //     {
-    //         driver->start_updates(update_stream, configuration().get_n_threads());
-    //     }
-    // }
-    //         AlgorithmsExperiment experiment {driver};
-    //         experiment.execute();
-
     omp_set_nested(1);
+    auto start = high_resolution_clock::now();
     #pragma omp parallel sections num_threads(2)
     {
         #pragma omp section
         {
-            driver->start_updates(update_stream, 1);
+            driver.start_updates(update_stream, 1);
         }
 
         #pragma omp section
         {
-            while(!driver->stop_sequential()) {
+            LOG("Batch update with threads: " << configuration().get_n_threads());
+            LOG("Batch update with batch_size: " << configuration().get_batch_size());
+            sleep(25);
+            while(!driver.stop_sequential()) {
                 experiment_a.execute();
-                driver->apply_updates();
+                driver.apply_updates();
             }
-            
         }
     }
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(end - start);
+    LOG("Sequential Experiment time (in ms): " << duration.count() << "\n");
+    LOG("Total updates applied" << driver.updates_applied);
 }
 
 vector<int64_t> SequentialExperiment::get_times() {

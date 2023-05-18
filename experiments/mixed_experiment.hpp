@@ -6,7 +6,7 @@
 class MixedExperiment {
 
 public:
-    MixedExperiment(LiveGraphDriver* driver, UpdateStream* update_stream) 
+    MixedExperiment(LiveGraphDriver& driver, UpdateStream& update_stream) 
     : driver(driver), update_stream(update_stream), experiment_a(driver), experiment_u(driver, update_stream) {
         LOG("Starting Mixed Experiment");
     }
@@ -17,8 +17,8 @@ public:
     vector<int64_t> get_times();
 
 private:
-    LiveGraphDriver* driver;
-    UpdateStream* update_stream;
+    LiveGraphDriver& driver;
+    UpdateStream& update_stream;
     AlgorithmsExperiment experiment_a;
     UpdatesExperiment experiment_u;
 

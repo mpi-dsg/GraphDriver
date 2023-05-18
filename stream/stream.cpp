@@ -14,6 +14,8 @@ EdgeStream::EdgeStream(const string& path) {
     }
 }
 
+EdgeStream::~EdgeStream() {}
+
 vector<uint64_t> EdgeStream::get_sources() {
     return sources;
 }
