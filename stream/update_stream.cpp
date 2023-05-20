@@ -15,9 +15,11 @@ UpdateStream::UpdateStream(const string& path) {
     
     uint64_t src = -1, dst = -1;
     double wt = -1;
-    while(reader.read_edge(src, dst, wt)) {
+    uint64_t limit = 100000000;
+    while(reader.read_edge(src, dst, wt) && limit > 0) {
         EdgeUpdate update {src, dst, wt==0.0};
         updates.push_back(update);
+        limit--;
     }
 }
 
@@ -25,7 +27,7 @@ void UpdateStream::add_update(EdgeUpdate update) {
     updates.push_back(update);
 }
 
-vector<EdgeUpdate> UpdateStream::get_updates() {
-    // return vector<EdgeUpdate*>(updates.begin(), updates.begin() + 100000);
+vector<EdgeUpdate>& UpdateStream::get_updates() {
+    // return vector<EdgeUpdate>(updates.begin(), updates.begin() + 1000);
     return updates;
 }

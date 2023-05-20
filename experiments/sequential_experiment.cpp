@@ -19,17 +19,17 @@ void SequentialExperiment::execute() {
         {
             LOG("Batch update with threads: " << configuration().get_n_threads());
             LOG("Batch update with batch_size: " << configuration().get_batch_size());
-            sleep(25);
             while(!driver.stop_sequential()) {
-                experiment_a.execute();
                 driver.apply_updates();
+                // driver.get_graph()->compact();
+                experiment_a.execute();
             }
         }
     }
     auto end = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(end - start);
     LOG("Sequential Experiment time (in ms): " << duration.count() << "\n");
-    LOG("Total updates applied" << driver.updates_applied);
+    LOG("Total updates applied: " << driver.updates_applied);
 }
 
 vector<int64_t> SequentialExperiment::get_times() {

@@ -19,7 +19,7 @@ void MixedExperiment::execute() {
 
         #pragma omp section
         {
-            sleep(25);
+            // sleep(10);
             while(!terminate) { // Keep on running algorithms until updates finish
                 experiment_a.execute();
             }

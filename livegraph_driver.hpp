@@ -5,7 +5,7 @@
 #include <atomic>
 
 #include "tbb/concurrent_hash_map.h"
-#include "tbb/concurrent_queue.h"
+#include "tbb/concurrent_vector.h"
 #include "livegraph/livegraph.hpp"
 #include "reader/graph_reader.hpp"
 #include "stream/stream.hpp"
@@ -32,7 +32,7 @@ public:
     void start_updates(UpdateStream& update_stream, int n_threads = 1);
     void add_to_buffer(EdgeUpdate& update);
     void apply_updates();
-    void update_graph_batch_from_queue(tbb::concurrent_queue<EdgeUpdate>* inactive_buffer, uint64_t batch_size, int n_threads = 1);
+    void update_graph_batch_from_queue(tbb::concurrent_vector<EdgeUpdate>* inactive_buffer, uint64_t batch_size, int n_threads = 1);
     bool stop_sequential();
 
     unique_ptr<int64_t[]> execute_bfs(uint64_t ext_root = 1, int alpha = 15, int beta = 18);
@@ -44,8 +44,8 @@ private:
     atomic<uint64_t> n_vertices {0};
     atomic<uint64_t> n_edges {0};
     
-    tbb::concurrent_queue<EdgeUpdate>* active_buffer;
-    tbb::concurrent_queue<EdgeUpdate>* inactive_buffer;
+    tbb::concurrent_vector<EdgeUpdate>* active_buffer;
+    tbb::concurrent_vector<EdgeUpdate>* inactive_buffer;
     atomic<bool> all_updates_added_to_buffer = false;
 
     bool vertex_exists(uint64_t& external_id, Transaction& tx);

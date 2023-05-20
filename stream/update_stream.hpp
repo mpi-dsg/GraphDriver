@@ -23,5 +23,5 @@ public:
     ~UpdateStream();
 
     void add_update(EdgeUpdate update);
-    vector<EdgeUpdate> get_updates();
+    vector<EdgeUpdate>& get_updates();
 };
