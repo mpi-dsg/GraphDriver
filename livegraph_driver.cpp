@@ -2,6 +2,7 @@
 #include <omp.h>
 #include <thread>
 #include <chrono>
+#include <unordered_set>
 
 #include "livegraph_driver.hpp"
 #include "configuration.hpp"
@@ -518,4 +519,181 @@ void LiveGraphDriver::print_bfs_output(int64_t* dist, uint64_t max_vertex_id, Tr
             LOG(external_id << ": " << dist[logical_id]);
         }
     }
+}
+
+
+uint64_t LiveGraphDriver::execute_tc() {
+    auto transaction = graph->begin_read_only_transaction();
+    uint64_t max_vertex_id = graph->get_max_vertex_id();
+
+    uint64_t tc = 0;
+    unique_ptr<uint32_t[]> ptr_degrees_out { new uint32_t[max_vertex_id] };
+    uint32_t* __restrict degrees_out = ptr_degrees_out.get();
+
+    LOG("In TC");
+    omp_set_num_threads(2048);
+    // precompute the degrees of the vertices
+    #pragma omp parallel for schedule(dynamic, 4096)
+    for(uint64_t v = 0; v < max_vertex_id; v++){
+        bool vertex_exists = !transaction.get_vertex(v).empty();
+        if(vertex_exists){ // out degree, restrict the scope
+            uint32_t count = 0;
+            auto iterator = transaction.get_edges(v, 0);
+            while(iterator.valid()){ count ++; iterator.next(); }
+            degrees_out[v] = count; 
+        }
+    }
+
+    // LOG("In TC2");
+    // LOG(max_vertex_id);
+    #pragma omp parallel for reduction(+:tc) schedule(dynamic, 64)
+    for(uint64_t v = 0; v < max_vertex_id; v++){
+        if(degrees_out[v] == numeric_limits<uint32_t>::max()) continue; // the vertex does not exist
+
+        // LOG("> Node " << v);
+
+        uint64_t num_triangles = 0; // number of triangles found so far for the node v
+
+        // Cfr. Spec v.0.9.0 pp. 15: "If the number of neighbors of a vertex is less than two, its coefficient is defined as zero"
+        uint64_t v_degree_out = degrees_out[v];
+        if(v_degree_out < 2) continue;
+
+        // Build the list of neighbours of v
+        unordered_set<uint64_t> neighbours;
+
+        { // Fetch the list of neighbours of v
+            auto iterator1 = transaction.get_edges(v, 0);
+            while(iterator1.valid()){
+                uint64_t u = iterator1.dst_id();
+                neighbours.insert(u);
+                iterator1.next();
+            }
+        }
+        // LOG("> Node " << v << "Nbrs done");
+        // again, visit all neighbours of v
+        auto iterator1 = transaction.get_edges(v, /* label */ 0);
+        while(iterator1.valid()){
+            uint64_t u = iterator1.dst_id();
+            if(u < v) {
+                iterator1.next();
+                continue;
+            } // skip vertex with smaller id
+
+            auto iterator2 = transaction.get_edges(u, /* label */ 0);
+            while(iterator2.valid()){
+                uint64_t w = iterator2.dst_id();
+                if(w < u) {
+                    iterator2.next();
+                    continue;
+                } // skip vertex with smaller id
+
+                // check whether it's also a neighbour of v
+                if(neighbours.count(w) == 1){
+                    // COUT_DEBUG_TC("Triangle found " << v << " - " << u << " - " << w);
+                    num_triangles++;
+                }
+
+                iterator2.next();
+            }
+
+            iterator1.next();
+        }
+
+        tc += num_triangles;
+    }
+    
+    LOG("TC: " << tc);
+    transaction.abort();
+
+    return tc;
+}
+
+uint64_t LiveGraphDriver::execute_label_tc() {
+    auto transaction = graph->begin_read_only_transaction();
+    uint64_t max_vertex_id = graph->get_max_vertex_id();
+
+    uint32_t LABEL_COUNT = 8;
+    LOG("In label TC");
+    for(uint32_t i_label = 0; i_label < LABEL_COUNT; i_label++){
+        uint32_t tc = 0;
+        unique_ptr<uint32_t[]> ptr_degrees_out { new uint32_t[max_vertex_id] };
+        uint32_t* __restrict degrees_out = ptr_degrees_out.get();
+        
+        // precompute the degrees of the vertices
+        #pragma omp parallel for schedule(dynamic, 4096)
+        for(uint64_t v = 0; v < max_vertex_id; v++){
+            bool vertex_exists = !transaction.get_vertex(v).empty();
+            if(vertex_exists){ // out degree, restrict the scope
+                uint32_t count = 0;
+                auto iterator = transaction.get_edges(v, 0);
+                while(iterator.valid()){ count ++; iterator.next(); }
+                degrees_out[v] = count; 
+            }
+        }
+
+        // LOG("In TC2");
+        // LOG(max_vertex_id);
+        #pragma omp parallel for reduction(+:tc) schedule(dynamic, 64)
+        for(uint64_t v = 0; v < max_vertex_id; v++){
+            uint64_t ext_v = int2ext(v, transaction);
+            if((degrees_out[v] == numeric_limits<uint32_t>::max()) || (ext_v % LABEL_COUNT != i_label)) continue; // the vertex does not exist
+
+            // LOG("> Node " << v);
+
+            uint64_t num_triangles = 0; // number of triangles found so far for the node v
+
+            // Cfr. Spec v.0.9.0 pp. 15: "If the number of neighbors of a vertex is less than two, its coefficient is defined as zero"
+            uint64_t v_degree_out = degrees_out[v];
+            if(v_degree_out < 2) continue;
+
+            // Build the list of neighbours of v
+            unordered_set<uint64_t> neighbours;
+
+            { // Fetch the list of neighbours of v
+                auto iterator1 = transaction.get_edges(v, 0);
+                while(iterator1.valid()){
+                    uint64_t u = iterator1.dst_id();
+                    neighbours.insert(u);
+                    iterator1.next();
+                }
+            }
+            // LOG("> Node " << v << "Nbrs done");
+            // again, visit all neighbours of v
+            auto iterator1 = transaction.get_edges(v, /* label */ 0);
+            while(iterator1.valid()){
+                uint64_t u = iterator1.dst_id();
+                uint64_t ext_u = int2ext(u, transaction);
+                if((u < v) || (ext_u % LABEL_COUNT != i_label)) {
+                    iterator1.next();
+                    continue;
+                } // skip vertex with smaller id or different label
+
+                auto iterator2 = transaction.get_edges(u, /* label */ 0);
+                while(iterator2.valid()){
+                    uint64_t w = iterator2.dst_id();
+                    uint64_t ext_w = int2ext(w, transaction);
+                    if((w < u) || (ext_w % LABEL_COUNT != i_label)) {
+                        iterator2.next();
+                        continue;
+                    } // skip vertex with smaller id
+
+                    // check whether it's also a neighbour of v
+                    if(neighbours.count(w) == 1){
+                        // LOG("Triangle found " << v << " - " << u << " - " << w);
+                        num_triangles++;
+                    }
+
+                    iterator2.next();
+                }
+
+                iterator1.next();
+            }
+
+            tc += num_triangles;
+        }
+        
+        LOG("Labeled TC " << i_label << ": " << tc);
+    }  
+
+    return 1;
 }

@@ -7,12 +7,19 @@ using namespace std::chrono;
 void AlgorithmsExperiment::execute() {
     for(int i = 0; i < configuration().get_repetitions(); i++){
         auto start = high_resolution_clock::now();
-        auto output = driver.execute_bfs(0);
+        auto output1 = driver.execute_bfs(0);
         auto end = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(end - start);
         auto time = duration.count();
-        times.push_back(time);
         LOG("BFS Execution Time: " << time);
+
+        start = high_resolution_clock::now();
+        auto output2 = driver.execute_tc();
+        end = high_resolution_clock::now();
+        duration = duration_cast<milliseconds>(end - start);
+        time = duration.count();
+        times.push_back(time);
+        LOG("TC Execution Time: " << time);
     }
 
     // for(auto time: times) LOG(time);

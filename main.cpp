@@ -95,7 +95,7 @@ int main(int argc, char* argv[]){
     switch(type) {
         case 2:
         {
-            UpdatesExperiment experiment_u {driver, update_stream};
+            UpdatesExperiment experiment_u {driver, update_stream, true};
             experiment_u.execute();
             break;
         }

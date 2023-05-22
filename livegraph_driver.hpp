@@ -37,6 +37,9 @@ public:
 
     unique_ptr<int64_t[]> execute_bfs(uint64_t ext_root = 1, int alpha = 15, int beta = 18);
     void print_bfs_output(int64_t* dist, uint64_t max_vertex_id, Transaction& tx);
+
+    uint64_t execute_tc();
+    uint64_t execute_label_tc();
 private:
     Graph* graph;
     VertexDictionary ext2int_map;
