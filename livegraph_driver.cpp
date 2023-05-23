@@ -131,7 +131,6 @@ bool LiveGraphDriver::add_edge(uint64_t ext_id1, uint16_t label, uint64_t ext_id
 }
 
 bool LiveGraphDriver::remove_edge(uint64_t ext_id1, uint16_t label, uint64_t ext_id2) {
-    bool done = false;
     // TODO: Confirm do we need to abort
     do {
         auto tx = graph->begin_transaction();
@@ -142,18 +141,23 @@ bool LiveGraphDriver::remove_edge(uint64_t ext_id1, uint16_t label, uint64_t ext
             }
             auto int_id1 = ext2int(ext_id1, tx);
             auto int_id2 = ext2int(ext_id2, tx);
-            tx.del_edge(int_id1, label, int_id2);
-            tx.del_edge(int_id2, label, int_id1);
+            
+            bool removed = tx.del_edge(int_id1, label, int_id2);
+            if(removed) {
+                while(true) {
+                    removed = tx.del_edge(int_id2, label, int_id1);
+                    if(removed) break;
+                }
+                n_edges--;
+            }
+    
             tx.commit();
-            done = true;
-            n_edges--;
+            return removed;
         }
         catch(lg::Transaction::RollbackExcept& e) {
             tx.abort();
         }
-    } while(!done);
-
-    return true;
+    } while(true);
 }
 
 void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t batch_size, int n_threads, bool log) {
@@ -214,10 +218,17 @@ bool LiveGraphDriver::remove_edge_batch(uint64_t ext_id1, uint16_t label, uint64
     }
     auto int_id1 = ext2int(ext_id1, tx);
     auto int_id2 = ext2int(ext_id2, tx);
-    tx.del_edge(int_id1, label, int_id2);
-    tx.del_edge(int_id2, label, int_id1);
-    n_edges--;
-    return true;
+    
+    bool removed = tx.del_edge(int_id1, label, int_id2);
+    if(removed) {
+        while(true) {
+            removed = tx.del_edge(int_id2, label, int_id1);
+            if(removed) break;
+        }
+        n_edges--;
+    }
+    
+    return removed;
 }
 
 void LiveGraphDriver::validate_load_graph(EdgeStream& stream, int n_threads) {
