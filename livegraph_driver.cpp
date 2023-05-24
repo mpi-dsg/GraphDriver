@@ -542,7 +542,6 @@ uint64_t LiveGraphDriver::execute_tc() {
     uint32_t* __restrict degrees_out = ptr_degrees_out.get();
 
     LOG("In TC");
-    omp_set_num_threads(2048);
     // precompute the degrees of the vertices
     #pragma omp parallel for schedule(dynamic, 4096)
     for(uint64_t v = 0; v < max_vertex_id; v++){
