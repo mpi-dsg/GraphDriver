@@ -98,10 +98,10 @@ void LiveGraphDriver::update_graph(UpdateStream& update_stream, int n_threads = 
         if(update.insert) add_edge(update.src, 0, update.dst);
         else remove_edge(update.src, 0, update.dst);
 
-        tmp_cnt++;
+        updates_applied++;
     }
 
-    cout << "Updates Applied: " << tmp_cnt << endl;
+    LOG("Total Updates Applied: " << updates_applied);
 }
 
 bool LiveGraphDriver::add_edge(uint64_t ext_id1, uint16_t label, uint64_t ext_id2) {

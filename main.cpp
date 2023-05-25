@@ -119,7 +119,7 @@ int main(int argc, char* argv[]){
     }
     end = high_resolution_clock::now();
     duration = duration_cast<milliseconds>(end - start);
-    LOG("Experiment Time: " << duration.count());
+    LOG("Experiment Time (in ms): " << duration.count());
 
     Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
     print_statistics(stats);

@@ -11,15 +11,16 @@ void AlgorithmsExperiment::execute() {
         auto end = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(end - start);
         auto time = duration.count();
+        times.push_back(time);
         LOG("BFS Execution Time: " << time);
 
-        start = high_resolution_clock::now();
-        auto output2 = driver.execute_tc();
-        end = high_resolution_clock::now();
-        duration = duration_cast<milliseconds>(end - start);
-        time = duration.count();
-        times.push_back(time);
-        LOG("TC Execution Time: " << time);
+        // start = high_resolution_clock::now();
+        // auto output2 = driver.execute_tc();
+        // end = high_resolution_clock::now();
+        // duration = duration_cast<milliseconds>(end - start);
+        // time = duration.count();
+        // times.push_back(time);
+        // LOG("TC Execution Time: " << time);
     }
 
     // for(auto time: times) LOG(time);
@@ -36,6 +37,7 @@ Statistics AlgorithmsExperiment::calculate_statistics(const vector<int64_t>& num
         stats.max = 0;
         stats.sum = 0;
         stats.average = 0.0;
+        stats.median = 0.0;
         stats.percentile90 = 0;
         stats.percentile99 = 0;
         stats.count = 0;

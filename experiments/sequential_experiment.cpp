@@ -7,7 +7,6 @@ using namespace std::chrono;
 
 void SequentialExperiment::execute() {
     omp_set_nested(1);
-    auto start = high_resolution_clock::now();
     #pragma omp parallel sections num_threads(2)
     {
         #pragma omp section
@@ -26,9 +25,6 @@ void SequentialExperiment::execute() {
             }
         }
     }
-    auto end = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(end - start);
-    LOG("Sequential Experiment time (in ms): " << duration.count() << "\n");
     LOG("Total updates applied: " << driver.updates_applied);
 }
 

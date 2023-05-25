@@ -19,14 +19,13 @@ void MixedExperiment::execute() {
 
         #pragma omp section
         {
-            // sleep(10);
             while(!terminate) { // Keep on running algorithms until updates finish
                 experiment_a.execute();
             }
         }
     }
 
-    LOG("Total updates applied" << driver.updates_applied);
+    LOG("Total updates applied: " << driver.updates_applied);
 }
 
 vector<int64_t> MixedExperiment::get_times() {
