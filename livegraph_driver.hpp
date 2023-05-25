@@ -43,9 +43,11 @@ public:
 private:
     Graph* graph;
     VertexDictionary ext2int_map;
-    atomic<uint64_t> tmp_cnt {0} ;
     atomic<uint64_t> n_vertices {0};
     atomic<uint64_t> n_edges {0};
+
+    atomic<uint64_t> del_calls {0};
+    atomic<uint64_t> del_executed {0};
     
     tbb::concurrent_vector<EdgeUpdate>* active_buffer;
     tbb::concurrent_vector<EdgeUpdate>* inactive_buffer;

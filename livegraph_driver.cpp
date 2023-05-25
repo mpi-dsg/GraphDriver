@@ -180,12 +180,19 @@ void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t b
         uint64_t end = min(done + batch_size, updates.size());
 
         auto tx = graph->begin_batch_loader();
-        # pragma omp parallel for num_threads(n_threads)
-        for(uint64_t i = start; i < end; i++) {
-            auto update = updates[i];
-            updates_applied++;
-            if(update.insert) add_edge_batch(update.src, 0, update.dst, tx);
-            else remove_edge_batch(update.src, 0, update.dst, tx);
+        # pragma omp parallel num_threads(n_threads)
+        {
+            int thread_count = omp_get_num_threads();
+            int thread_id = omp_get_thread_num();
+            for(uint64_t i = start; i < end; i++) {
+                auto update = updates[i];
+                if(static_cast<int>( (update.src + update.dst) % thread_count ) == thread_id)
+                {
+                    updates_applied++;
+                    if(update.insert) add_edge_batch(update.src, 0, update.dst, tx);
+                    else remove_edge_batch(update.src, 0, update.dst, tx);
+                }
+            }
         }
         tx.commit();
         // graph->compact();
@@ -194,6 +201,8 @@ void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t b
     }
 
     LOG("Total Updates Applied: " << updates_applied);
+    LOG("Total del_calls: " << del_calls);
+    LOG("Total del_applied: " << del_executed);
 }
 
 bool LiveGraphDriver::add_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx) {
@@ -211,6 +220,7 @@ bool LiveGraphDriver::add_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t 
 }
 
 bool LiveGraphDriver::remove_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx) {
+    del_calls++;
     if(!(vertex_exists(ext_id1, tx) && vertex_exists(ext_id2, tx))) { // Vertices DNE
         tx.abort();
         LOG("WRONG");
@@ -226,6 +236,7 @@ bool LiveGraphDriver::remove_edge_batch(uint64_t ext_id1, uint16_t label, uint64
             if(removed) break;
         }
         n_edges--;
+        del_executed++;
     }
     
     return removed;
