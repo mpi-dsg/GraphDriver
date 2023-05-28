@@ -20,6 +20,7 @@ UpdateStream::UpdateStream(const string& path) {
         EdgeUpdate update {src, dst, wt==0.0};
         updates.push_back(update);
         limit--;
+        size++;
     }
 }
 
@@ -30,4 +31,8 @@ void UpdateStream::add_update(EdgeUpdate update) {
 vector<EdgeUpdate>& UpdateStream::get_updates() {
     // return vector<EdgeUpdate>(updates.begin(), updates.begin() + 1000);
     return updates;
+}
+
+uint64_t UpdateStream::get_size() {
+    return size;
 }

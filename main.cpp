@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <thread>
 #include <cxxopts.hpp>
 
 #include "configuration.hpp"
@@ -8,7 +9,9 @@
 #include "experiments/algorithms_experiment.hpp"
 #include "experiments/updates_experiment.hpp"
 #include "experiments/mixed_experiment.hpp"
+#include "experiments/mixedv2_experiment.hpp"
 #include "experiments/sequential_experiment.hpp"
+#include "experiments/sequentialv2_experiment.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -36,6 +39,7 @@ int main(int argc, char* argv[]){
         ("R,repetitions", "Number of repetitions for algorithms", cxxopts::value<int>()->default_value("0"))
         ("r,rate", "Rate of updates to be applied for sequential", cxxopts::value<uint64_t>()->default_value("100000"))
         ("t,type", "Type of experiment(0 - insert only, 1 - algorithms only, 2 - updates only, 3 - mixed, 4 - sequential)", cxxopts::value<int>()->default_value("0"))
+        ("c,cores", "Number of cores for updates", cxxopts::value<int>())
         ("h,help", "Print usage")
     ;
     auto result = options.parse(argc, argv);
@@ -52,6 +56,7 @@ int main(int argc, char* argv[]){
     configuration().set_batch_size(result["batch_size"].as<uint64_t>());
     configuration().set_repetitions(result["repetitions"].as<int>());
     configuration().set_rate(result["rate"].as<uint64_t>());
+    configuration().set_cores(result["cores"].as<int>());
     int type = result["type"].as<int>();
 
     /*
@@ -101,14 +106,14 @@ int main(int argc, char* argv[]){
         }
         case 3:
         {
-            MixedExperiment experiment_m {driver, update_stream};
+            MixedV2Experiment experiment_m {driver, update_stream};
             experiment_m.execute();
             times = experiment_m.get_times();
             break;
         }
         case 4:
         {
-            SequentialExperiment experiment_s {driver, update_stream};
+            SequentialV2Experiment experiment_s {driver, update_stream};
             experiment_s.execute();
             times = experiment_s.get_times();
             break;

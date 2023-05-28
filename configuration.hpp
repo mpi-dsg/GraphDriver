@@ -29,11 +29,15 @@ public:
     void set_rate(uint64_t rate);
     uint64_t get_rate();
 
+    void set_cores(int cores);
+    int get_cores();
+
 private:
     int n_threads;
     uint64_t batch_size;
     int repetitions;
     uint64_t rate;
+    int cores;
 };
 
 Configuration& configuration();

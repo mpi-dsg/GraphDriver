@@ -28,6 +28,7 @@ public:
     void load_graph(EdgeStream& stream, int n_threads = 1, bool validate = false);
     void update_graph(UpdateStream& update_stream, int n_threads);
     void update_graph_batch(UpdateStream& update_stream, uint64_t batch_size, int n_threads = 1, bool log = true);
+    void update_graph_batch_part(vector<EdgeUpdate>& updates, uint64_t start, uint64_t end, int n_threads = 1);
 
     void start_updates(UpdateStream& update_stream, int n_threads = 1);
     void add_to_buffer(EdgeUpdate& update);

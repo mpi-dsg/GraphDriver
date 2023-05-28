@@ -25,7 +25,7 @@ public:
         LOG("Starting Algorithms Experiment");
     }
     ~AlgorithmsExperiment() {};
-    void execute();
+    void execute(int repetitions = -1);
     vector<int64_t> get_times();
     static Statistics calculate_statistics(const vector<int64_t>& numbers);
 private:

@@ -4,8 +4,9 @@
 
 using namespace std::chrono;
 
-void AlgorithmsExperiment::execute() {
-    for(int i = 0; i < configuration().get_repetitions(); i++){
+void AlgorithmsExperiment::execute(int repetitions) {
+    if(repetitions < 0) repetitions = configuration().get_repetitions();
+    for(int i = 0; i < repetitions; i++){
         auto start = high_resolution_clock::now();
         auto output1 = driver.execute_bfs(0);
         auto end = high_resolution_clock::now();
@@ -22,8 +23,6 @@ void AlgorithmsExperiment::execute() {
         // times.push_back(time);
         // LOG("TC Execution Time: " << time);
     }
-
-    // for(auto time: times) LOG(time);
 }
 
 vector<int64_t> AlgorithmsExperiment::get_times() {

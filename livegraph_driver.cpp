@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include <unordered_set>
+#include <sched.h>
 
 #include "livegraph_driver.hpp"
 #include "configuration.hpp"
@@ -92,15 +93,20 @@ void LiveGraphDriver::update_graph(UpdateStream& update_stream, int n_threads = 
     auto updates = update_stream.get_updates();
 
     LOG("Number of writer Threads: " << n_threads);
-    # pragma omp parallel for num_threads(n_threads)
-    for(uint64_t i = 0; i < updates.size(); i++) {
-        auto update = updates[i];
-        if(update.insert) add_edge(update.src, 0, update.dst);
-        else remove_edge(update.src, 0, update.dst);
-
-        updates_applied++;
+    # pragma omp parallel num_threads(n_threads)
+    {
+        int thread_count = omp_get_num_threads();
+        int thread_id = omp_get_thread_num();
+        # pragma omp for
+        for(uint64_t i = 0; i < updates.size(); i++) {
+            auto update = updates[i];
+            if(static_cast<int>( (update.src + update.dst) % thread_count ) == thread_id) {
+                if(update.insert) add_edge(update.src, 0, update.dst);
+                else remove_edge(update.src, 0, update.dst);
+                updates_applied++;
+            }
+        }
     }
-
     LOG("Total Updates Applied: " << updates_applied);
 }
 
@@ -167,34 +173,19 @@ void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t b
         LOG("Batch update with threads: " << n_threads);
         LOG("Batch update with batch_size: " << batch_size);
     }
-
-    uint64_t num_batches = updates.size()/batch_size + (updates.size() % batch_size != 0);
+    uint64_t size = update_stream.get_size();
+    uint64_t num_batches = size/batch_size + (size % batch_size != 0);
     // uint64_t applied_updates = 0;
-    LOG("Size: " << updates.size());
+    LOG("Size: " << size);
     LOG("Num batches:" << num_batches);
 
     uint64_t done = 0;
     for(uint64_t b_no = 0; b_no < num_batches; b_no++){
         if(log) LOG("Batch: " << b_no);
         uint64_t start = done;
-        uint64_t end = min(done + batch_size, updates.size());
+        uint64_t end = min(done + batch_size, size);
 
-        auto tx = graph->begin_batch_loader();
-        # pragma omp parallel num_threads(n_threads)
-        {
-            int thread_count = omp_get_num_threads();
-            int thread_id = omp_get_thread_num();
-            for(uint64_t i = start; i < end; i++) {
-                auto update = updates[i];
-                if(static_cast<int>( (update.src + update.dst) % thread_count ) == thread_id)
-                {
-                    updates_applied++;
-                    if(update.insert) add_edge_batch(update.src, 0, update.dst, tx);
-                    else remove_edge_batch(update.src, 0, update.dst, tx);
-                }
-            }
-        }
-        tx.commit();
+        update_graph_batch_part(updates, start, end, n_threads);
         // graph->compact();
 
         done += batch_size;
@@ -203,6 +194,27 @@ void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t b
     LOG("Total Updates Applied: " << updates_applied);
     LOG("Total del_calls: " << del_calls);
     LOG("Total del_applied: " << del_executed);
+}
+
+void LiveGraphDriver::update_graph_batch_part(vector<EdgeUpdate>& updates, uint64_t start, uint64_t end, int n_threads) {
+    LOG("Applying2: " << end-start);
+
+    auto tx = graph->begin_batch_loader();
+    # pragma omp parallel num_threads(n_threads)
+    {
+        int thread_count = omp_get_num_threads();
+        int thread_id = omp_get_thread_num();
+        for(uint64_t i = start; i < end; i++) {
+            auto update = updates[i];
+            if( static_cast<int>( (update.src + update.dst) % thread_count ) == thread_id)
+            {
+                updates_applied++;
+                if(update.insert) add_edge_batch(update.src, 0, update.dst, tx);
+                else remove_edge_batch(update.src, 0, update.dst, tx);
+            }
+        }
+    }
+    tx.commit();
 }
 
 bool LiveGraphDriver::add_edge_batch(uint64_t ext_id1, uint16_t label, uint64_t ext_id2, Transaction& tx) {
@@ -449,7 +461,7 @@ int64_t do_bfs_TDStep(Transaction& tx, uint64_t max_vertex_id, int64_t* distance
     #pragma omp parallel reduction(+ : scout_count)
     {
         gapbs::QueueBuffer<int64_t> lqueue(queue);
-
+        
         #pragma omp for schedule(dynamic, 64)
         for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
             int64_t u = *q_iter;

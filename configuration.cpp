@@ -44,3 +44,11 @@ void Configuration::set_rate(uint64_t rate) {
 uint64_t Configuration::get_rate() {
     return rate;
 }
+
+void Configuration::set_cores(int cores) {
+    this->cores = cores;
+}
+
+int Configuration::get_cores() {
+    return cores;
+}

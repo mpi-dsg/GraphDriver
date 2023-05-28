@@ -17,6 +17,7 @@ public:
 
 class UpdateStream {
     vector<EdgeUpdate> updates;
+    uint64_t size = 0;
 public:
     UpdateStream();
     UpdateStream(const string& path);
@@ -24,4 +25,5 @@ public:
 
     void add_update(EdgeUpdate update);
     vector<EdgeUpdate>& get_updates();
+    uint64_t get_size();
 };
