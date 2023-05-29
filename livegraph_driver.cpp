@@ -97,7 +97,6 @@ void LiveGraphDriver::update_graph(UpdateStream& update_stream, int n_threads = 
     {
         int thread_count = omp_get_num_threads();
         int thread_id = omp_get_thread_num();
-        # pragma omp for
         for(uint64_t i = 0; i < updates.size(); i++) {
             auto update = updates[i];
             if(static_cast<int>( (update.src + update.dst) % thread_count ) == thread_id) {
