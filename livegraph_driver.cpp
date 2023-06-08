@@ -196,7 +196,7 @@ void LiveGraphDriver::update_graph_batch(UpdateStream& update_stream, uint64_t b
 }
 
 void LiveGraphDriver::update_graph_batch_part(vector<EdgeUpdate>& updates, uint64_t start, uint64_t end, int n_threads) {
-    LOG("Applying2: " << end-start);
+    LOG("Applying: " << end-start);
 
     auto tx = graph->begin_batch_loader();
     # pragma omp parallel num_threads(n_threads)

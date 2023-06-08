@@ -39,7 +39,7 @@ int main(int argc, char* argv[]){
         ("R,repetitions", "Number of repetitions for algorithms", cxxopts::value<int>()->default_value("0"))
         ("r,rate", "Rate of updates to be applied for sequential", cxxopts::value<uint64_t>()->default_value("100000"))
         ("t,type", "Type of experiment(0 - insert only, 1 - algorithms only, 2 - updates only, 3 - mixed, 4 - sequential)", cxxopts::value<int>()->default_value("0"))
-        ("c,cores", "Number of cores for updates", cxxopts::value<int>())
+        ("c,cores", "Number of cores for updates", cxxopts::value<int>()->default_value("16"))
         ("h,help", "Print usage")
     ;
     auto result = options.parse(argc, argv);
