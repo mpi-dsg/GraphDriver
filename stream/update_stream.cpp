@@ -15,7 +15,7 @@ UpdateStream::UpdateStream(const string& path) {
     
     uint64_t src = -1, dst = -1;
     double wt = -1;
-    uint64_t limit = 100000000;
+    uint64_t limit = 10;
     while(reader.read_edge(src, dst, wt) && limit > 0) {
         EdgeUpdate update {src, dst, wt==0.0};
         updates.push_back(update);

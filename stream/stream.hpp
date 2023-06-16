@@ -1,3 +1,6 @@
+#ifndef STREAM
+#define STREAM
+
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -16,3 +19,5 @@ public:
     vector<uint64_t> generate_permutation_vector(uint64_t size);
     void permute(vector<uint64_t>& array1, vector<uint64_t>& array2, const vector<uint64_t>& permutation);
 };
+
+#endif

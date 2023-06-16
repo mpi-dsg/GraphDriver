@@ -49,7 +49,7 @@ namespace lg
 
         vertex_t get_max_vertex_id() const;
 
-        timestamp_t compact(timestamp_t read_epoch_id = NO_TRANSACTION);
+        timestamp_t compact(timestamp_t read_epoch_id = NO_TRANSACTIONv2);
 
         Transaction begin_transaction();
         Transaction begin_read_only_transaction();
@@ -57,7 +57,7 @@ namespace lg
 
     private:
         const std::unique_ptr<livegraph::Graph> graph;
-        constexpr static timestamp_t NO_TRANSACTION = -1;
+        constexpr static timestamp_t NO_TRANSACTIONv2 = -1;
     };
 
     class Transaction

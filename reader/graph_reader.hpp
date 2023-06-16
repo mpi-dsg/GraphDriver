@@ -5,13 +5,7 @@
 
 using namespace std;
 
-struct edge_t {
-    uint64_t src;
-    uint64_t des;
-};
-
 class GraphReader {
-    vector<edge_t> edges;
     size_t pos {0};
     
 public:

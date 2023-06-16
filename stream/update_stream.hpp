@@ -1,3 +1,6 @@
+#ifndef UPDATE_STREAM
+#define UPDATE_STREAM
+
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -27,3 +30,5 @@ public:
     vector<EdgeUpdate>& get_updates();
     uint64_t get_size();
 };
+
+#endif

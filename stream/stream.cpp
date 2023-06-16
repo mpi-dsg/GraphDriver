@@ -17,7 +17,7 @@ EdgeStream::EdgeStream(const string& path) {
     }
 
     LOG("Permuting");
-    permute(sources, destinations, generate_permutation_vector(sources.size()));
+    // permute(sources, destinations, generate_permutation_vector(sources.size()));
 }
 
 vector<uint64_t> EdgeStream::generate_permutation_vector(uint64_t size) {

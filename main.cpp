@@ -4,7 +4,7 @@
 #include <cxxopts.hpp>
 
 #include "configuration.hpp"
-// #include "livegraph_driver.hpp"
+#include "driver/sortledton_driver.hpp"
 #include "reader/log_reader.hpp"
 #include "experiments/algorithms_experiment.hpp"
 #include "experiments/updates_experiment.hpp"
@@ -72,22 +72,10 @@ int main(int argc, char* argv[]){
     /*
         Loading Graph
     */
-    LiveGraphDriver driver;
+    SortledtonDriver driver;
     bool validate = result["validate"].as<bool>();
     driver.load_graph(stream, configuration().get_n_threads(), validate);
-    if(type == 0) exit(0);
-    if(type == 1) {
-        AlgorithmsExperiment experiment_a {driver};
-        experiment_a.execute();
-        auto times = experiment_a.get_times();
-        Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
-        print_statistics(stats);
-        exit(0);
-    }
 
-    /*
-        Loading UpdateStream
-    */
     string log_path = result["log_path"].as<string>();
     start = high_resolution_clock::now();
     UpdateStream update_stream {log_path};
@@ -95,37 +83,62 @@ int main(int argc, char* argv[]){
     duration = duration_cast<milliseconds>(end - start);
     LOG("Update Stream loading time (in ms): " << duration.count());
 
-    start = high_resolution_clock::now();
-    vector<int64_t> times;
-    switch(type) {
-        case 2:
-        {
-            UpdatesExperiment experiment_u {driver, update_stream, true};
-            experiment_u.execute();
-            break;
-        }
-        case 3:
-        {
-            MixedV2Experiment experiment_m {driver, update_stream};
-            experiment_m.execute();
-            times = experiment_m.get_times();
-            break;
-        }
-        case 4:
-        {
-            SequentialV2Experiment experiment_s {driver, update_stream};
-            experiment_s.execute();
-            times = experiment_s.get_times();
-            break;
-        }
-        default:
-            LOG("Invalid Type: " << type);
-            break;
-    }
-    end = high_resolution_clock::now();
-    duration = duration_cast<milliseconds>(end - start);
-    LOG("Experiment Time (in ms): " << duration.count());
+    driver.update_graph(update_stream, configuration().get_n_threads());
 
-    Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
-    print_statistics(stats);
+
+    LOG("EEEENDDDDDD");
+    // return 0;
+    // if(type == 0) exit(0);
+    // if(type == 1) {
+    //     AlgorithmsExperiment experiment_a {driver};
+    //     experiment_a.execute();
+    //     auto times = experiment_a.get_times();
+    //     Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
+    //     print_statistics(stats);
+    //     exit(0);
+    // }
+
+    // /*
+    //     Loading UpdateStream
+    // */
+    // string log_path = result["log_path"].as<string>();
+    // start = high_resolution_clock::now();
+    // UpdateStream update_stream {log_path};
+    // end = high_resolution_clock::now();
+    // duration = duration_cast<milliseconds>(end - start);
+    // LOG("Update Stream loading time (in ms): " << duration.count());
+
+    // start = high_resolution_clock::now();
+    // vector<int64_t> times;
+    // switch(type) {
+    //     case 2:
+    //     {
+    //         UpdatesExperiment experiment_u {driver, update_stream, true};
+    //         experiment_u.execute();
+    //         break;
+    //     }
+    //     case 3:
+    //     {
+    //         MixedV2Experiment experiment_m {driver, update_stream};
+    //         experiment_m.execute();
+    //         times = experiment_m.get_times();
+    //         break;
+    //     }
+    //     case 4:
+    //     {
+    //         SequentialV2Experiment experiment_s {driver, update_stream};
+    //         experiment_s.execute();
+    //         times = experiment_s.get_times();
+    //         break;
+    //     }
+    //     default:
+    //         LOG("Invalid Type: " << type);
+    //         break;
+    // }
+    // end = high_resolution_clock::now();
+    // duration = duration_cast<milliseconds>(end - start);
+    // LOG("Experiment Time (in ms): " << duration.count());
+
+    // Statistics stats = AlgorithmsExperiment::calculate_statistics(times);
+    // print_statistics(stats);
 }
